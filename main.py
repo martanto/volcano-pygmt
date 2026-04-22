@@ -137,11 +137,12 @@ def add_relief(
             if contour_annotation is not None
             else contour_interval * 5
         )
+
         fig.grdcontour(
             grid=grid,
             levels=contour_interval,
-            annotation=annotation,
-            pen=["c0.3p,gray30", "a0.5p,gray10"],
+            annotation=f"{annotation}+f6p",
+            pen=["c0.3p,gray40", "a0.5p,gray10"],
             projection=projection,
         )
 
