@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from volcano_plot.utils import slugify, km_to_degrees
-from volcano_plot.config import load_config
-from volcano_plot.logger import logger
-from volcano_plot.constant import COUNTRY_REGIONS
+from volcano_pygmt.utils import slugify, km_to_degrees
+from volcano_pygmt.config import load_config
+from volcano_pygmt.logger import logger
+from volcano_pygmt.constant import COUNTRY_REGIONS
 
 
 load_config()
@@ -29,7 +29,7 @@ def add_inset(
             * ``"lat"`` (float) — volcano latitude in decimal degrees.
 
         country (str): Country name used to look up the bounding region in
-            :data:`~volcano_plot.constant.COUNTRY_REGIONS`.  Defaults to
+            :data:`~volcano_pygmt.constant.COUNTRY_REGIONS`.  Defaults to
             ``"Indonesia"``.
 
     Returns:
@@ -37,11 +37,11 @@ def add_inset(
 
     Raises:
         ValueError: If ``country`` is not a key in
-            :data:`~volcano_plot.constant.COUNTRY_REGIONS`.
+            :data:`~volcano_pygmt.constant.COUNTRY_REGIONS`.
 
     Examples:
         >>> import pygmt
-        >>> from volcano_plot.plot import add_inset
+        >>> from volcano_pygmt.plot import add_inset
         >>> fig = pygmt.Figure()
         >>> volcano = {"lon": 107.65, "lat": -6.9}
         >>> fig = add_inset(fig, volcano, country="Indonesia")
@@ -128,7 +128,7 @@ def add_relief(
 
     Examples:
         >>> import pygmt
-        >>> from volcano_plot.plot import add_relief
+        >>> from volcano_pygmt.plot import add_relief
         >>> fig = pygmt.Figure()
         >>> region = [106.5, 108.5, -8.0, -6.0]
         >>> fig = add_relief(fig, region, "M10c", hillshade=True, contour=True)
@@ -226,7 +226,7 @@ def create_figure(
         pygmt.Figure: A fully rendered PyGMT figure ready to save or display.
 
     Examples:
-        >>> from volcano_plot.plot import create_figure
+        >>> from volcano_pygmt.plot import create_figure
         >>> volcano = {"lon": 107.65, "lat": -6.9, "name": "Example Volcano"}
         >>> fig = create_figure(volcano, padding_km=10.0, contour=True)
         >>> fig.savefig("example.png")
@@ -362,7 +362,7 @@ def simple_plot(maps: list) -> list[Path]:
             written, in the same order as ``maps``.
 
     Examples:
-        >>> from volcano_plot import simple_plot
+        >>> from volcano_pygmt import simple_plot
         >>> maps = [
         ...     {
         ...         "volcano": {"lon": 107.65, "lat": -6.9, "name": "Tangkuban Parahu"},

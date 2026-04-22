@@ -1,11 +1,11 @@
-"""Unit tests for volcano_plot.utils."""
+"""Unit tests for volcano_pygmt.utils."""
 import math
 import tempfile
 from pathlib import Path
 
 import pytest
 
-from volcano_plot.utils import ensure_dir, km_to_degrees, slugify
+from volcano_pygmt.utils import ensure_dir, km_to_degrees, slugify
 
 
 class TestKmToDegrees:

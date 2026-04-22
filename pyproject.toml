@@ -3,7 +3,7 @@ requires = ["uv_build"]
 build-backend = "uv_build"
 
 [project]
-name =  "volcano-plot"
+name =  "volcano-pygmt"
 version = "0.1.0"
 authors = [
     {name = "Martanto", email = "martanto@live.com"},
@@ -39,5 +39,5 @@ dev = [
 cache-dir = "./.cache/uv"
 
 [project.urls]
-Homepage = "https://github.com/martanto/volcano-plot"
-Issues = "https://github.com/martanto/volcano-plot/issues"
+Homepage = "https://github.com/martanto/volcano-pygmt"
+Issues = "https://github.com/martanto/volcano-pygmt/issues"

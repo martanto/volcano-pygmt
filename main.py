@@ -1,4 +1,4 @@
-from volcano_plot import simple_plot
+from volcano_pygmt import simple_plot
 
 
 if __name__ == "__main__":

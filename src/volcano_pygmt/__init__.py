@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 from importlib.metadata import version
 
-from volcano_plot.plot import add_inset, add_relief, simple_plot, create_figure
+from volcano_pygmt.plot import add_inset, add_relief, simple_plot, create_figure
 
 
-__version__ = version("volcano-plot")
+__version__ = version("volcano-pygmt")
 __author__ = "Martanto"
 __author_email__ = "martanto@live.com"
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2026, Martanto"
-__url__ = "https://github.com/martanto/volcano-plot"
+__url__ = "https://github.com/martanto/volcano-pygmt"
 
 __all__ = [
     "__version__",

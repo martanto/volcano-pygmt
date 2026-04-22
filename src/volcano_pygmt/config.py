@@ -27,7 +27,7 @@ def load_config() -> None:
             the ``.env`` file.
 
     Examples:
-        >>> from volcano_plot.config import load_config
+        >>> from volcano_pygmt.config import load_config
         >>> load_config()  # checks env first, then .env; raises OSError if missing
     """
     # 1. Check user / system environment first.

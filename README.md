@@ -1,4 +1,4 @@
-# volcano-plot
+# volcano-pygmt
 
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
 ![Python](https://img.shields.io/badge/python-3.12%2B-blue)
@@ -86,7 +86,7 @@ The package calls `load_config()` automatically on import, which reads `.env` an
 If you need to load the configuration manually (e.g. in a standalone script that imports PyGMT directly), call `load_config()` before any PyGMT import:
 
 ```python
-from volcano_plot.config import load_config
+from volcano_pygmt.config import load_config
 
 load_config()  # reads .env and sets GMT_LIBRARY_PATH
 
@@ -98,8 +98,8 @@ import pygmt  # now safe to import
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/martanto/volcano-plot.git
-cd volcano-plot
+git clone https://github.com/martanto/volcano-pygmt.git
+cd volcano-pygmt
 ```
 
 2. Install dependencies with `uv`:
@@ -113,7 +113,7 @@ This installs all runtime dependencies (`pygmt`, `loguru`, `dotenv`) and dev too
 ## Quick Start
 
 ```python
-from volcano_plot import simple_plot
+from volcano_pygmt import simple_plot
 
 maps = [
     {
@@ -144,7 +144,7 @@ See `main.py` for a more complete example with multiple volcanoes.
 The following example (from `main.py`) plots three Indonesian volcanoes — Semeru, Lewotobi Laki-laki, and Ruang — each with one seismic station and contour lines:
 
 ```python
-from volcano_plot import simple_plot
+from volcano_pygmt import simple_plot
 
 maps = [
     {
@@ -202,7 +202,7 @@ uv run main.py
 ### Single volcano with color relief and hillshade
 
 ```python
-from volcano_plot.plot import create_figure
+from volcano_pygmt.plot import create_figure
 
 volcano = {"lon": 107.65, "lat": -6.9, "name": "Tangkuban Parahu"}
 

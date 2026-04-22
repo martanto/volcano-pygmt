@@ -1,7 +1,7 @@
 import os
 import sys
 
-from volcano_plot.utils import ensure_dir
+from volcano_pygmt.utils import ensure_dir
 
 from loguru import logger
 

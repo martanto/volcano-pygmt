@@ -1,6 +1,6 @@
 """Session-wide fixtures for the test suite."""
 import pytest
-from volcano_plot.config import load_config
+from volcano_pygmt.config import load_config
 
 
 @pytest.fixture(scope="session", autouse=True)

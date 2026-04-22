@@ -1,5 +1,5 @@
-"""Unit tests for volcano_plot.constant."""
-from volcano_plot.constant import COUNTRY_REGIONS
+"""Unit tests for volcano_pygmt.constant."""
+from volcano_pygmt.constant import COUNTRY_REGIONS
 
 
 class TestCountryRegions:
