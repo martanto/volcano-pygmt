@@ -1,14 +1,33 @@
+import math
 from pathlib import Path
 
 from volcano_plot import pygmt
 
 
-def create_figure(volcano: dict, stations: dict) -> pygmt.Figure:
+def km_to_degrees(km: float, lat: float) -> tuple[float, float]:
+    """Convert a distance in kilometers to degrees of latitude and longitude.
+
+    Args:
+        km: Distance in kilometers.
+        lat: Reference latitude in decimal degrees (used for longitude conversion).
+
+    Returns:
+        A tuple of (lat_deg, lon_deg).
+    """
+    lat_deg = km / 111.32
+    lon_deg = km / (111.32 * math.cos(math.radians(lat)))
+    return lat_deg, lon_deg
+
+
+def create_figure(
+    volcano: dict, stations: dict, padding_km: float = 20.0
+) -> pygmt.Figure:
     """Create a PyGMT scientific map for a volcano and its stations.
 
     Args:
         volcano: Dict with keys lon, lat, elev, name.
         stations: Dict mapping station code to dict with lon and lat.
+        padding_km: Map extent padding around the volcano in kilometers. Defaults to 20.0.
 
     Returns:
         A pygmt.Figure with the rendered map.
@@ -16,9 +35,10 @@ def create_figure(volcano: dict, stations: dict) -> pygmt.Figure:
     lon = volcano["lon"]
     lat = volcano["lat"]
     name = volcano["name"]
-    padding = 0.5
 
-    region = [lon - padding, lon + padding, lat - padding, lat + padding]
+    lat_deg, lon_deg = km_to_degrees(padding_km, lat)
+
+    region = [lon - lon_deg, lon + lon_deg, lat - lat_deg, lat + lat_deg]
     projection = "M10c"
 
     fig = pygmt.Figure()
@@ -93,7 +113,7 @@ if __name__ == "__main__":
             },
         },
         {
-            "volcano": {"lon": 125.3671, "lat": 2.3058, "elev": 703, "name": "Ruang"},
+            "volcano": {"lon": 125.3667, "lat": 2.3031, "elev": 703, "name": "Ruang"},
             "stations": {
                 "RUA3": {"lat": 2.3196, "lon": 125.3814},
             },
