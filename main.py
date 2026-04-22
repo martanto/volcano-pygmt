@@ -82,6 +82,9 @@ def create_figure(
     stations: dict | None = None,
     padding_km: float = 5.0,
     country: str = "Indonesia",
+    hillshade: bool = False,
+    contour: bool = False,
+    contour_interval: float = 100.0,
 ) -> pygmt.Figure:
     """Create a PyGMT scientific map for a volcano and its stations.
 
@@ -90,6 +93,9 @@ def create_figure(
         stations: Dict mapping station code to dict with lon and lat.
         padding_km: Map extent padding around the volcano in kilometers. Defaults to 5.0.
         country: Country name for the locator inset. Defaults to "Indonesia".
+        hillshade: Whether to render a hillshade basemap. Defaults to True.
+        contour: Whether to draw elevation contour lines in gray. Defaults to False.
+        contour_interval: Contour interval in meters. Defaults to 100.0.
 
     Returns:
         A pygmt.Figure with the rendered map.
@@ -111,12 +117,27 @@ def create_figure(
     fig.coast(
         region=region,
         projection=projection,
-        land="lightgray",
+        land=(None if (hillshade or contour) else "lightgray"),
         water="white",
         shorelines="1/0.5p",
         borders="1/0.5p",
         frame="ag",
     )
+
+    if hillshade or contour:
+        grid = pygmt.datasets.load_earth_relief(resolution="03s", region=region)
+
+        if hillshade:
+            dgrid = pygmt.grdgradient(grid, radiance=[315, 45])
+            fig.grdimage(grid=grid, cmap="gray", shading=dgrid, projection=projection)
+
+        if contour:
+            fig.grdcontour(
+                grid=grid,
+                levels=contour_interval,
+                pen="0.3p,gray50",
+                projection=projection,
+            )
 
     fig.plot(
         x=lon,
@@ -179,6 +200,9 @@ def main(maps: list):
             stations=map["stations"],
             padding_km=padding_km,
             country=map.get("country", "Indonesia"),
+            hillshade=map.get("hillshade", False),
+            contour=True,
+            contour_interval=map.get("contour_interval", 100.0),
         )
 
         fig.savefig(filepath)
