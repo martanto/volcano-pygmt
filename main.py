@@ -195,18 +195,20 @@ def create_figure(
     fig = pygmt.Figure()
 
     with pygmt.config(FONT_TITLE="10p", MAP_TITLE_OFFSET="2p"):
-        title_frame = ["af", f"+t{name}"] if show_title else ["af"]
-        fig.basemap(region=region, projection=projection, frame=title_frame)
+        title_frame = [f"+t{name}"] if show_title else []
+        if title_frame:
+            fig.basemap(region=region, projection=projection, frame=title_frame)
 
-    fig.coast(
-        region=region,
-        projection=projection,
-        land=("white" if (hillshade or contour) else "lightgray"),
-        water="white",
-        shorelines="1/2.0p",
-        borders="1/0.5p",
-        frame="ag",
-    )
+    with pygmt.config(FONT_ANNOT_PRIMARY="7p"):
+        fig.coast(
+            region=region,
+            projection=projection,
+            land=("white" if (hillshade or contour) else "lightgray"),
+            water="white",
+            shorelines="1/2.0p",
+            borders="1/0.5p",
+            frame="a",
+        )
 
     if hillshade or contour or color_relief:
         add_relief(
@@ -260,7 +262,7 @@ def create_figure(
                 offset="0/-0.4c",
             )
 
-    with pygmt.config(FONT_ANNOT_PRIMARY="7p"):
+    with pygmt.config(FONT_ANNOT_PRIMARY="6p"):
         fig.legend(position="JBR+jBR+o0.2c/0.6c", box="+gwhite+p0.5p")
 
     scale_km = round(padding_km * 0.4)
