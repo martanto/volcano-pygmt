@@ -15,6 +15,7 @@ keywords = ["volcano", "plot", "volcanology", "volcanoes"]
 requires-python = ">=3.12"
 dependencies = [
     "dotenv>=0.9.9",
+    "loguru>=0.7.3",
     "pygmt>=0.18.0",
 ]
 classifiers = [
