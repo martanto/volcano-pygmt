@@ -69,9 +69,80 @@ def add_inset(
         fig.plot(
             x=volcano["lon"],
             y=volcano["lat"],
-            style="a0.4c",
+            style="a0.3c",  # star inset
             fill="red",
             pen="0.5p,black",
+        )
+
+    return fig
+
+
+def add_relief(
+    fig: pygmt.Figure,
+    region: list[float],
+    projection: str,
+    hillshade: bool = False,
+    contour: bool = False,
+    contour_interval: float = 100.0,
+    contour_annotation: float | None = None,
+    color_relief: bool = False,
+    colorbar: bool = False,
+    relief_cmap: str = "gmt/haxby",
+) -> pygmt.Figure:
+    """Load earth relief and render hillshade, color relief, and/or contours onto the figure.
+
+    Args:
+        fig: The PyGMT figure to draw on.
+        region: Map region as [lon_min, lon_max, lat_min, lat_max].
+        projection: PyGMT projection string.
+        hillshade: Whether to render a hillshade layer. Defaults to False.
+        contour: Whether to draw elevation contour lines. Defaults to False.
+        contour_interval: Contour interval in meters. Defaults to 100.0.
+        contour_annotation: Interval at which contour lines are labeled. If None,
+            defaults to 5x the contour_interval.
+        color_relief: Whether to render a color-filled relief map. Defaults to False.
+        colorbar: Whether to add a colorbar showing the elevation scale. Only
+            relevant when color_relief is True. Defaults to False.
+        relief_cmap: GMT colormap name for color relief. Defaults to "gmt/haxby".
+            Use "gray" for a light-gray-to-gray grayscale rendering. Any valid GMT
+            colormap name works — e.g. "geo", "topo", "dem1", "gray".
+
+    Returns:
+        The same pygmt.Figure with relief layers added.
+    """
+    grid = pygmt.datasets.load_earth_relief(resolution="03s", region=region)
+
+    if hillshade:
+        # normalize="e0.6" applies exponential normalization with a scale of 0.6,
+        # which compresses the gradient range and produces a noticeably lighter hillshade.
+        dgrid = pygmt.grdgradient(grid, radiance=[315, 45], normalize="e0.6")
+        fig.grdimage(grid=grid, cmap="gray", shading=dgrid, projection=projection)
+
+    if contour:
+        if color_relief:
+            dgrid = (
+                pygmt.grdgradient(grid, radiance=[315, 45], normalize="e0.6")
+                if hillshade
+                else None
+            )
+            cpt = pygmt.makecpt(cmap=relief_cmap, series=[0, float(grid.max())])
+            fig.coast(region=region, projection=projection, land="c")
+            fig.grdimage(grid=grid, cmap=cpt, shading=dgrid, projection=projection)
+            fig.coast(Q=True)
+            if colorbar:
+                fig.colorbar(frame=["x+lelevation", "y+lm"])
+
+        annotation = (
+            contour_annotation
+            if contour_annotation is not None
+            else contour_interval * 5
+        )
+        fig.grdcontour(
+            grid=grid,
+            levels=contour_interval,
+            annotation=annotation,
+            pen=["c0.3p,gray30", "a0.5p,gray10"],
+            projection=projection,
         )
 
     return fig
@@ -85,6 +156,11 @@ def create_figure(
     hillshade: bool = False,
     contour: bool = False,
     contour_interval: float = 100.0,
+    contour_annotation: float | None = None,
+    color_relief: bool = False,
+    colorbar: bool = False,
+    relief_cmap: str = "gmt/haxby",
+    show_title: bool = True,
 ) -> pygmt.Figure:
     """Create a PyGMT scientific map for a volcano and its stations.
 
@@ -93,9 +169,16 @@ def create_figure(
         stations: Dict mapping station code to dict with lon and lat.
         padding_km: Map extent padding around the volcano in kilometers. Defaults to 5.0.
         country: Country name for the locator inset. Defaults to "Indonesia".
-        hillshade: Whether to render a hillshade basemap. Defaults to True.
-        contour: Whether to draw elevation contour lines in gray. Defaults to False.
+        hillshade: Whether to render a hillshade basemap. Defaults to False.
+        contour: Whether to draw elevation contour lines. Defaults to False.
         contour_interval: Contour interval in meters. Defaults to 100.0.
+        contour_annotation: Interval at which contour lines are labeled. Defaults to
+            5x contour_interval.
+        color_relief: Whether to render a color-filled relief map. Defaults to False.
+        colorbar: Whether to add a colorbar (used with color_relief). Defaults to False.
+        relief_cmap: GMT colormap for color relief. Defaults to "gmt/haxby".
+            Use "gray" for a light-gray-to-gray grayscale rendering.
+        show_title: Whether to display the volcano name as the map title. Defaults to True.
 
     Returns:
         A pygmt.Figure with the rendered map.
@@ -112,32 +195,32 @@ def create_figure(
     fig = pygmt.Figure()
 
     with pygmt.config(FONT_TITLE="10p", MAP_TITLE_OFFSET="2p"):
-        fig.basemap(region=region, projection=projection, frame=["af", f"+t{name}"])
+        title_frame = ["af", f"+t{name}"] if show_title else ["af"]
+        fig.basemap(region=region, projection=projection, frame=title_frame)
 
     fig.coast(
         region=region,
         projection=projection,
-        land=(None if (hillshade or contour) else "lightgray"),
+        land=("white" if (hillshade or contour) else "lightgray"),
         water="white",
-        shorelines="1/0.5p",
+        shorelines="1/2.0p",
         borders="1/0.5p",
         frame="ag",
     )
 
-    if hillshade or contour:
-        grid = pygmt.datasets.load_earth_relief(resolution="03s", region=region)
-
-        if hillshade:
-            dgrid = pygmt.grdgradient(grid, radiance=[315, 45])
-            fig.grdimage(grid=grid, cmap="gray", shading=dgrid, projection=projection)
-
-        if contour:
-            fig.grdcontour(
-                grid=grid,
-                levels=contour_interval,
-                pen="0.3p,gray50",
-                projection=projection,
-            )
+    if hillshade or contour or color_relief:
+        add_relief(
+            fig,
+            region,
+            projection,
+            hillshade=hillshade,
+            contour=contour,
+            contour_interval=contour_interval,
+            contour_annotation=contour_annotation,
+            color_relief=color_relief,
+            colorbar=colorbar,
+            relief_cmap=relief_cmap,
+        )
 
     fig.plot(
         x=lon,
@@ -152,7 +235,7 @@ def create_figure(
         x=lon,
         y=lat,
         text=name,
-        font="10p,Helvetica,black",
+        font="10p,Helvetica-Bold,black",
         offset="0/-0.4c",
     )
 
@@ -163,7 +246,7 @@ def create_figure(
                 x=sta["lon"],
                 y=sta["lat"],
                 style="i0.3c",
-                fill="blue",
+                fill="green",
                 pen="0.8p,black",
                 label=(
                     "Station+S0.25c" if index == 0 else None
@@ -173,8 +256,8 @@ def create_figure(
                 x=sta["lon"],
                 y=sta["lat"],
                 text=code,
-                font="8p,Helvetica,black",  # 10p means 10 points, where "p" stands for points
-                offset="0/0.4c",
+                font="7p,Helvetica-Bold,black",
+                offset="0/-0.4c",
             )
 
     with pygmt.config(FONT_ANNOT_PRIMARY="7p"):
@@ -201,8 +284,13 @@ def main(maps: list):
             padding_km=padding_km,
             country=map.get("country", "Indonesia"),
             hillshade=map.get("hillshade", False),
-            contour=True,
+            contour=map.get("contour", False),
             contour_interval=map.get("contour_interval", 100.0),
+            contour_annotation=map.get("contour_annotation", None),
+            color_relief=map.get("color_relief", False),
+            colorbar=map.get("colorbar", False),
+            relief_cmap=map.get("relief_cmap", "gmt/haxby"),
+            show_title=map.get("show_title", False),
         )
 
         fig.savefig(filepath)
@@ -220,6 +308,11 @@ if __name__ == "__main__":
             "stations": {
                 "VG.LEKR.EHZ.00": {"lat": -8.137244444, "lon": 112.9858444},
             },
+            "color_relief": False,
+            "contour": True,
+            "contour_interval": 300.0,
+            "contour_annotation": 600.0,
+            "colorbar": True,
         },
         {
             "padding_km": 10,
@@ -232,6 +325,11 @@ if __name__ == "__main__":
             "stations": {
                 "VG.OJN.EHZ.00": {"lat": -8.502944444, "lon": 122.7737222},
             },
+            "color_relief": False,
+            "contour": True,
+            "contour_interval": 300.0,
+            "contour_annotation": 300.0,
+            "colorbar": True,
         },
         {
             "padding_km": 5,
@@ -239,6 +337,11 @@ if __name__ == "__main__":
             "stations": {
                 "VG.RUA3.EHZ.00": {"lat": 2.3196, "lon": 125.3814},
             },
+            "color_relief": False,
+            "contour": True,
+            "contour_interval": 200.0,
+            "contour_annotation": 200.0,
+            "colorbar": True,
         },
     ]
 
