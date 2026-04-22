@@ -182,5 +182,7 @@ cython_debug/
 
 .cache/
 output/
-*test*
+/test*.py
+/test_*.py
+logs/
 *.ipynb
