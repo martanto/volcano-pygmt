@@ -2,6 +2,7 @@ from pathlib import Path
 
 from volcano_plot.utils import slugify, km_to_degrees
 from volcano_plot.config import load_config
+from volcano_plot.logger import logger
 from volcano_plot.constant import COUNTRY_REGIONS
 
 
@@ -115,13 +116,11 @@ def add_relief(
         contour_annotation (float | None): Interval at which contour lines are
             labelled.  When ``None``, defaults to ``5 × contour_interval``.
         color_relief (bool): Render a colour-filled elevation image using
-            ``relief_cmap``.  Only applied when ``contour`` is also ``True``.
-            Defaults to ``False``.
+            ``relief_cmap``.  Defaults to ``False``.
         colorbar (bool): Add a colorbar showing the elevation scale.  Only
             relevant when ``color_relief`` is ``True``.  Defaults to ``False``.
         relief_cmap (str): GMT colormap name for the colour-relief image.
-            Defaults to ``"gmt/haxby"``.  Any valid GMT CPT name is accepted,
-            e.g. ``"geo"``, ``"topo"``, ``"dem1"``, ``"gray"``.
+            Defaults to ``"gmt/haxby"``.
 
     Returns:
         pygmt.Figure: The same ``fig`` object with the requested relief layers
@@ -134,28 +133,28 @@ def add_relief(
         >>> region = [106.5, 108.5, -8.0, -6.0]
         >>> fig = add_relief(fig, region, "M10c", hillshade=True, contour=True)
     """
+    logger.debug("Loading earth relief data for region {}", region)
     grid = pygmt.datasets.load_earth_relief(resolution="03s", region=region)
 
-    if hillshade:
+    # Compute gradient once; reused by both hillshade and color_relief if needed.
+    dgrid = None
+    if hillshade or color_relief:
         # normalize="e0.6" applies exponential normalization with a scale of 0.6,
         # which compresses the gradient range and produces a noticeably lighter hillshade.
         dgrid = pygmt.grdgradient(grid, radiance=[315, 45], normalize="e0.6")
+
+    if hillshade:
         fig.grdimage(grid=grid, cmap="gray", shading=dgrid, projection=projection)
 
-    if contour:
-        if color_relief:
-            dgrid = (
-                pygmt.grdgradient(grid, radiance=[315, 45], normalize="e0.6")
-                if hillshade
-                else None
-            )
-            cpt = pygmt.makecpt(cmap=relief_cmap, series=[0, float(grid.max())])
-            fig.coast(region=region, projection=projection, land="c")
-            fig.grdimage(grid=grid, cmap=cpt, shading=dgrid, projection=projection)
-            fig.coast(Q=True)
-            if colorbar:
-                fig.colorbar(frame=["x+lelevation", "y+lm"])
+    if color_relief:
+        cpt = pygmt.makecpt(cmap=relief_cmap, series=[0, float(grid.max())])
+        fig.coast(region=region, projection=projection, land="c")
+        fig.grdimage(grid=grid, cmap=cpt, shading=dgrid, projection=projection)
+        fig.coast(Q=True)
+        if colorbar:
+            fig.colorbar(frame=["x+lelevation", "y+lm"])
 
+    if contour:
         annotation = (
             contour_annotation
             if contour_annotation is not None
@@ -236,6 +235,8 @@ def create_figure(
     lat = volcano["lat"]
     name = volcano["name"]
 
+    logger.info("Creating figure for volcano: {}", name)
+
     lat_deg, lon_deg = km_to_degrees(padding_km, lat)
 
     region = [lon - lon_deg, lon + lon_deg, lat - lat_deg, lat + lat_deg]
@@ -252,7 +253,7 @@ def create_figure(
         fig.coast(
             region=region,
             projection=projection,
-            land=("white" if (hillshade or contour) else "lightgray"),
+            land=("white" if (hillshade or contour or color_relief) else "lightgray"),
             water="white",
             shorelines="1/2.0p",
             borders="1/0.5p",
@@ -290,7 +291,6 @@ def create_figure(
         offset="0/-0.4c",
     )
 
-    # Plot stations if not None
     if stations:
         for index, (code, sta) in enumerate(stations.items()):
             fig.plot(
@@ -314,7 +314,7 @@ def create_figure(
     with pygmt.config(FONT_ANNOT_PRIMARY="6p"):
         fig.legend(position="JBR+jBR+o0.2c/0.6c", box="+gwhite+p0.5p")
 
-    scale_km = round(padding_km * 0.4)
+    scale_km = max(1, round(padding_km * 0.4))
     with pygmt.config(FONT_ANNOT_PRIMARY="6p"):
         fig.basemap(
             region=region,
@@ -342,11 +342,11 @@ def simple_plot(maps: list) -> list[Path]:
             * ``"volcano"`` (dict) — passed directly to :func:`create_figure`;
               must include ``"lon"``, ``"lat"``, and ``"name"``.
             * ``"padding_km"`` (float) — map half-extent in kilometres.
-            * ``"stations"`` (dict | None) — optional station dict.
 
             The following keys are optional and fall back to the
             :func:`create_figure` defaults when absent:
 
+            * ``"stations"`` (dict | None) — defaults to ``None``.
             * ``"country"`` (str) — defaults to ``"Indonesia"``.
             * ``"hillshade"`` (bool) — defaults to ``False``.
             * ``"contour"`` (bool) — defaults to ``False``.
@@ -381,12 +381,11 @@ def simple_plot(maps: list) -> list[Path]:
     for _map in maps:
         filename = slugify(_map["volcano"]["name"])
         filepath = output_dir / f"{filename}.png"
-        padding_km = _map["padding_km"]
 
         fig = create_figure(
             volcano=_map["volcano"],
-            stations=_map["stations"],
-            padding_km=padding_km,
+            stations=_map.get("stations"),
+            padding_km=_map["padding_km"],
             country=_map.get("country", "Indonesia"),
             hillshade=_map.get("hillshade", False),
             contour=_map.get("contour", False),
@@ -399,6 +398,7 @@ def simple_plot(maps: list) -> list[Path]:
         )
 
         fig.savefig(filepath)
+        logger.info("Saved figure to {}", filepath)
 
         files.append(filepath)
 
