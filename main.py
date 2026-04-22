@@ -261,7 +261,16 @@ def create_figure(
             )
 
     with pygmt.config(FONT_ANNOT_PRIMARY="7p"):
-        fig.legend(position="JBR+jBR+o0.2c", box="+gwhite+p0.5p")
+        fig.legend(position="JBR+jBR+o0.2c/0.6c", box="+gwhite+p0.5p")
+
+    scale_km = round(padding_km * 0.4)
+    with pygmt.config(FONT_ANNOT_PRIMARY="6p"):
+        fig.basemap(
+            region=region,
+            projection=projection,
+            map_scale=f"jBR+o0.2c/0.3c+w{scale_km}+f",
+            rose="jTR+o0.3c+w1.2c",
+        )
 
     add_inset(fig, volcano, country=country)
 
