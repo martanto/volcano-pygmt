@@ -52,7 +52,8 @@ convention = "google"
 
 [lint.isort]
 length-sort = true
-known-first-party = ["volcano_plot"]  # Replace with your package name
+known-first-party = ["volcano_plot"]
+section-order = ["future", "standard-library", "first-party", "third-party", "local-folder"]
 combine-as-imports = true
 force-single-line = false
 lines-after-imports = 2

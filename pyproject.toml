@@ -13,7 +13,10 @@ readme = "README.md"
 license = {file = "LICENSE"}
 keywords = ["volcano", "plot", "volcanology", "volcanoes"]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "dotenv>=0.9.9",
+    "pygmt>=0.18.0",
+]
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
