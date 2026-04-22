@@ -1,6 +1,7 @@
 # volcano-pygmt
 
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
+[![PyPI](https://img.shields.io/pypi/v/volcano-pygmt)](https://pypi.org/project/volcano-pygmt/)
 ![Python](https://img.shields.io/badge/python-3.12%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Status](https://img.shields.io/badge/status-active%20development-orange)
@@ -94,6 +95,14 @@ import pygmt  # now safe to import
 ```
 
 ## Installation
+
+### From PyPI
+
+```bash
+pip install volcano-pygmt
+```
+
+### From source
 
 1. Clone the repository:
 
