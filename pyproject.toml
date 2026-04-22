@@ -1,0 +1,39 @@
+[build-system]
+requires = ["uv_build"]
+build-backend = "uv_build"
+
+[project]
+name =  "volcano-plot"
+version = "0.1.0"
+authors = [
+    {name = "Martanto", email = "martanto@live.com"},
+]
+description = "Plot volcano on map"
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["volcano", "plot", "volcanology", "volcanoes"]
+requires-python = ">=3.12"
+dependencies = []
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+[dependency-groups]
+dev = [
+    "uv-build",
+    "ruff",
+    "ty",
+    "ipykernel",
+    "notebook",
+    "pytest",
+]
+
+[tool.uv]
+cache-dir = "./.cache/uv"
+
+[project.urls]
+Homepage = "https://github.com/martanto/volcano-plot"
+Issues = "https://github.com/martanto/volcano-plot/issues"
