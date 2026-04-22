@@ -9,7 +9,24 @@ _VAR = "GMT_LIBRARY_PATH"
 
 
 def load_config() -> None:
-    """Load environment variables from .env and configure GMT_LIBRARY_PATH."""
+    """Load environment variables from ``.env`` and configure ``GMT_LIBRARY_PATH``.
+
+    Reads the ``.env`` file in the current working directory (without overriding
+    variables already present in the environment), then ensures that
+    ``GMT_LIBRARY_PATH`` is set and prepended to ``PATH`` so that PyGMT can
+    locate the GMT shared library.
+
+    Returns:
+        None
+
+    Raises:
+        OSError: If ``GMT_LIBRARY_PATH`` is not set in the environment or in the
+            ``.env`` file after loading.
+
+    Examples:
+        >>> from volcano_plot.config import load_config
+        >>> load_config()  # reads .env, raises OSError if GMT_LIBRARY_PATH is missing
+    """
     load_dotenv(_ENV_FILE, override=False)
 
     gmt_path = os.environ.get(_VAR, "").strip()
