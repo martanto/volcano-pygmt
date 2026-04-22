@@ -50,7 +50,14 @@ def add_inset(
 
     region = COUNTRY_REGIONS[country]
 
-    with fig.inset(position="JBL+jBL+o0.2c+w3c/2c", box="+gwhite+p0.5p"):
+    inset_width = 3.0
+    lon_span = region[1] - region[0]
+    lat_span = region[3] - region[2]
+    inset_height = round(inset_width * (lat_span / lon_span), 2)
+
+    with fig.inset(
+        position=f"JBL+jBL+o0.2c+w{inset_width}c/{inset_height}c", box="+gwhite+p0.5p"
+    ):
         fig.coast(
             region=region,
             projection="M3c",
