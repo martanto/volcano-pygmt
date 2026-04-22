@@ -20,7 +20,7 @@ def km_to_degrees(km: float, lat: float) -> tuple[float, float]:
 
 
 def create_figure(
-    volcano: dict, stations: dict, padding_km: float = 20.0
+    volcano: dict, stations: dict, padding_km: float = 5.0
 ) -> pygmt.Figure:
     """Create a PyGMT scientific map for a volcano and its stations.
 
@@ -42,17 +42,36 @@ def create_figure(
     projection = "M10c"
 
     fig = pygmt.Figure()
-    fig.basemap(region=region, projection=projection, frame=["af", f"+t{name}"])
+
+    with pygmt.config(FONT_TITLE="10p", MAP_TITLE_OFFSET="2p"):
+        fig.basemap(region=region, projection=projection, frame=["af", f"+t{name}"])
+
     fig.coast(
         region=region,
         projection=projection,
         land="lightgray",
-        water="lightblue",
-        shorelines="0.5p,black",
-        borders="1/0.5p,gray",
+        water="white",
+        shorelines="1/0.5p",
+        borders="1/0.5p",
+        frame="ag",
     )
 
-    fig.plot(x=lon, y=lat, style="t0.4c", fill="red", pen="0.5p,black", label="Volcano")
+    fig.plot(
+        x=lon,
+        y=lat,
+        style="t0.4c",
+        fill="red",
+        pen="0.5p,black",
+        label="Volcano+S0.25c",
+    )
+
+    fig.text(
+        x=lon,
+        y=lat,
+        text=name,
+        font="10p,Helvetica,black",
+        offset="0/-0.4c",
+    )
 
     for code, sta in stations.items():
         fig.plot(
@@ -60,18 +79,19 @@ def create_figure(
             y=sta["lat"],
             style="i0.3c",
             fill="blue",
-            pen="0.5p,black",
-            label="Station",
+            pen="0.8p,black",
+            label="Station+S0.25c",  # +S0.25c sets the legend symbol size to 0.25 cm, which matches the 7p font size
         )
         fig.text(
             x=sta["lon"],
             y=sta["lat"],
             text=code,
-            font="6p,Helvetica,black",
-            offset="0/0.2c",
+            font="10p,Helvetica,black",  # 10p means 10 points, where "p" stands for points
+            offset="0/0.4c",
         )
 
-    fig.legend(position="JBR+jBR+o0.2c", box="+gwhite+p0.5p")
+    with pygmt.config(FONT_ANNOT_PRIMARY="7p"):
+        fig.legend(position="JBR+jBR+o0.2c", box="+gwhite+p0.5p")
 
     return fig
 
@@ -84,8 +104,12 @@ def main(maps: list):
 
     for map in maps:
         filepath = output_dir / f"{map['volcano']['name']}.png"
+        padding_km = map["padding_km"]
 
-        fig = create_figure(map["volcano"], map["stations"])
+        fig = create_figure(
+            volcano=map["volcano"], stations=map["stations"], padding_km=padding_km
+        )
+
         fig.savefig(filepath)
 
         files.append(filepath)
@@ -96,12 +120,14 @@ def main(maps: list):
 if __name__ == "__main__":
     maps = [
         {
+            "padding_km": 20,
             "volcano": {"lon": 112.922, "lat": -8.108, "elev": 3672, "name": "Semeru"},
             "stations": {
                 "LEKR": {"lat": -8.137244444, "lon": 112.9858444},
             },
         },
         {
+            "padding_km": 10,
             "volcano": {
                 "lon": 122.775,
                 "lat": -8.542,
@@ -113,6 +139,7 @@ if __name__ == "__main__":
             },
         },
         {
+            "padding_km": 5,
             "volcano": {"lon": 125.3667, "lat": 2.3031, "elev": 703, "name": "Ruang"},
             "stations": {
                 "RUA3": {"lat": 2.3196, "lon": 125.3814},
