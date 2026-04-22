@@ -73,20 +73,22 @@ def create_figure(
         offset="0/-0.4c",
     )
 
-    for code, sta in stations.items():
+    for index, (code, sta) in enumerate(stations.items()):
         fig.plot(
             x=sta["lon"],
             y=sta["lat"],
             style="i0.3c",
             fill="blue",
             pen="0.8p,black",
-            label="Station+S0.25c",  # +S0.25c sets the legend symbol size to 0.25 cm, which matches the 7p font size
+            label=(
+                "Station+S0.25c" if index == 0 else None
+            ),  # +S0.25c sets the legend symbol size to 0.25 cm, which matches the 7p font size
         )
         fig.text(
             x=sta["lon"],
             y=sta["lat"],
             text=code,
-            font="10p,Helvetica,black",  # 10p means 10 points, where "p" stands for points
+            font="8p,Helvetica,black",  # 10p means 10 points, where "p" stands for points
             offset="0/0.4c",
         )
 
@@ -123,7 +125,7 @@ if __name__ == "__main__":
             "padding_km": 20,
             "volcano": {"lon": 112.922, "lat": -8.108, "elev": 3672, "name": "Semeru"},
             "stations": {
-                "LEKR": {"lat": -8.137244444, "lon": 112.9858444},
+                "VG.LEKR.EHZ.00": {"lat": -8.137244444, "lon": 112.9858444},
             },
         },
         {
@@ -135,14 +137,14 @@ if __name__ == "__main__":
                 "name": "Lewotobi Laki-laki",
             },
             "stations": {
-                "OJN": {"lat": -8.502944444, "lon": 122.7737222},
+                "VG.OJN.EHZ.00": {"lat": -8.502944444, "lon": 122.7737222},
             },
         },
         {
             "padding_km": 5,
             "volcano": {"lon": 125.3667, "lat": 2.3031, "elev": 703, "name": "Ruang"},
             "stations": {
-                "RUA3": {"lat": 2.3196, "lon": 125.3814},
+                "VG.RUA3.EHZ.00": {"lat": 2.3196, "lon": 125.3814},
             },
         },
     ]
