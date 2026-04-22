@@ -13,7 +13,7 @@ _ERROR_LOG_RETENTION = "90 days"
 # Tracks whether logging is currently enabled.
 _logging_enabled: bool = True
 
-DEFAULT_LOG_DIR = ensure_dir(os.path.join(os.getcwd(), "logs"))
+DEFAULT_LOG_DIR: str = str(ensure_dir(os.path.join(os.getcwd(), "logs")))
 
 _FILE_FORMAT = (
     "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}"
@@ -30,25 +30,13 @@ logger.remove()
 def _configure_handlers(log_dir: str, console_level: str = "INFO") -> None:
     """Remove all existing handlers and re-add console + file handlers.
 
-    Centralises handler configuration so that module-level setup,
-    :func:`set_log_level`, and :func:`set_log_directory` all use identical
-    retention periods and formats.
-
-    Three handlers are registered:
-
-    * **stderr** — colourised, at ``console_level``.
-    * **plot_<date>.log** — all DEBUG+ messages, rotated daily, kept 30 days.
-    * **errors_<date>.log** — ERROR+ messages only, rotated daily, kept 90 days.
+    Centralises handler configuration so that module-level setup, set_log_level(),
+    and set_log_directory() all use the same retention periods and formats.
 
     Args:
-        log_dir (str): Directory path for log file output.  Created by the
-            caller before this function is invoked.
-        console_level (str): Log level for the stderr handler.  One of
-            ``"DEBUG"``, ``"INFO"``, ``"WARNING"``, ``"ERROR"``, or
-            ``"CRITICAL"``.  Case-insensitive.  Defaults to ``"INFO"``.
-
-    Returns:
-        None
+        log_dir (str): Directory path for log file output.
+        console_level (str, optional): Log level for the console handler.
+            Defaults to "INFO".
     """
     logger.remove()
 
@@ -89,14 +77,7 @@ def get_logger():
     """Return the package-wide loguru logger instance.
 
     Returns:
-        loguru.Logger: The shared logger instance with console and file handlers
-            already attached (unless logging has been disabled via
-            :func:`disable_logging`).
-
-    Examples:
-        >>> from volcano_plot.logger import get_logger
-        >>> log = get_logger()
-        >>> log.info("Map rendered successfully.")
+        loguru.Logger: The configured logger instance with console and file handlers.
     """
     return logger
 
@@ -105,20 +86,12 @@ def set_log_level(level: str) -> None:
     """Change the console log level dynamically.
 
     Removes all existing handlers and re-adds them with the new console level.
-    File handlers always retain ``DEBUG`` / ``ERROR`` as their minimum levels.
+    File handlers retain their original levels.
 
     Args:
-        level (str): Desired log level for the console handler.  One of
+        level (str): Desired log level for the console handler. One of
             ``"DEBUG"``, ``"INFO"``, ``"WARNING"``, ``"ERROR"``, or
-            ``"CRITICAL"``.  Case-insensitive.
-
-    Returns:
-        None
-
-    Examples:
-        >>> from volcano_plot.logger import set_log_level
-        >>> set_log_level("DEBUG")   # show all messages on the console
-        >>> set_log_level("WARNING") # suppress INFO and DEBUG on the console
+            ``"CRITICAL"``. Case-insensitive.
     """
     _configure_handlers(DEFAULT_LOG_DIR, console_level=level)
 
@@ -126,28 +99,15 @@ def set_log_level(level: str) -> None:
 def set_log_directory(log_dir: str) -> None:
     """Change the log file directory dynamically.
 
-    Updates the module-level ``DEFAULT_LOG_DIR``, creates the directory if it
-    does not yet exist, then reconfigures all handlers to write to the new
-    location.
+    Updates the global ``DEFAULT_LOG_DIR``, creates the directory if needed,
+    then reconfigures all handlers to write to the new location.
 
     Args:
         log_dir (str): Absolute or relative path to the new log directory.
-            Created automatically (including any missing parents) if it does not
-            exist.
-
-    Returns:
-        None
-
-    Raises:
-        PermissionError: If the process lacks write permission for the specified
-            directory or one of its parents.
-
-    Examples:
-        >>> from volcano_plot.logger import set_log_directory
-        >>> set_log_directory("/var/log/volcano_plot")
+            Created automatically if it does not exist.
     """
     global DEFAULT_LOG_DIR
-    DEFAULT_LOG_DIR = ensure_dir(os.path.abspath(log_dir))
+    DEFAULT_LOG_DIR = str(ensure_dir(os.path.abspath(log_dir)))
     _configure_handlers(DEFAULT_LOG_DIR)
     logger.info(f"Log directory changed to: {DEFAULT_LOG_DIR}")
 
@@ -155,19 +115,8 @@ def set_log_directory(log_dir: str) -> None:
 def disable_logging() -> None:
     """Disable all logging output globally.
 
-    Removes all active loguru handlers so no messages are written to the
-    console or log files, and sets the ``DISABLE_LOGGING=1`` environment
-    variable so that child processes inherit the same behaviour.  Call
-    :func:`enable_logging` to restore handlers.
-
-    Returns:
-        None
-
-    Examples:
-        >>> from volcano_plot.logger import disable_logging, enable_logging
-        >>> disable_logging()
-        >>> # ... do work without any log output ...
-        >>> enable_logging()
+    Remove all active loguru handlers so no messages are written to the
+    console or log files. Call :func:`enable_logging` to restore handlers.
     """
     global _logging_enabled
     _logging_enabled = False
@@ -178,17 +127,8 @@ def disable_logging() -> None:
 def enable_logging() -> None:
     """Re-enable logging after a previous :func:`disable_logging` call.
 
-    Restores console and file handlers using the current ``DEFAULT_LOG_DIR``
-    and clears the ``DISABLE_LOGGING`` environment variable.  Has no effect if
-    logging is already enabled.
-
-    Returns:
-        None
-
-    Examples:
-        >>> from volcano_plot.logger import disable_logging, enable_logging
-        >>> disable_logging()
-        >>> enable_logging()  # handlers are restored
+    Restore console and file handlers using the current ``DEFAULT_LOG_DIR``.
+    Has no effect if logging is already enabled.
     """
     global _logging_enabled
     if not _logging_enabled:
