@@ -10,12 +10,12 @@ A Python package for plotting volcano maps using [PyGMT](https://www.pygmt.org).
 <table>
 <tr>
   <td align="center">
-    <a href="assets/semeru.png"><img src="assets/semeru.png" width="240" alt="Semeru volcano map"></a>
+    <a href="https://raw.githubusercontent.com/martanto/volcano-pygmt/main/assets/semeru.png"><img src="https://raw.githubusercontent.com/martanto/volcano-pygmt/main/assets/semeru.png" width="240" alt="Semeru volcano map"></a>
     <br><b>Semeru</b> · East Java, Indonesia
     <br><sub>Contour interval 300 m · padding 20 km</sub>
   </td>
   <td align="center">
-    <a href="assets/lewotobi-laki-laki.png"><img src="assets/lewotobi-laki-laki.png" width="240" alt="Lewotobi Laki-laki volcano map"></a>
+    <a href="https://raw.githubusercontent.com/martanto/volcano-pygmt/main/assets/lewotobi-laki-laki.png"><img src="https://raw.githubusercontent.com/martanto/volcano-pygmt/main/assets/lewotobi-laki-laki.png" width="240" alt="Lewotobi Laki-laki volcano map"></a>
     <br><b>Lewotobi Laki-laki</b> · East Nusa Tenggara, Indonesia
     <br><sub>Contour interval 300 m · padding 10 km</sub>
   </td>
