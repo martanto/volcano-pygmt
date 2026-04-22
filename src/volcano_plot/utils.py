@@ -1,6 +1,6 @@
-import os
 import re
 import math
+from pathlib import Path
 
 
 def km_to_degrees(km: float, lat: float) -> tuple[float, float]:
@@ -19,7 +19,7 @@ def km_to_degrees(km: float, lat: float) -> tuple[float, float]:
             represent the equivalent angular distance in decimal degrees.
 
     Raises:
-        ZeroDivisionError: If ``lat`` is exactly ±90°, ``cos(lat)`` is zero and
+        ValueError: If ``lat`` is exactly ±90°, ``cos(lat)`` is zero and
             longitude conversion is undefined.
 
     Examples:
@@ -30,6 +30,10 @@ def km_to_degrees(km: float, lat: float) -> tuple[float, float]:
         >>> round(lon_deg, 4)
         0.127
     """
+    if abs(lat) == 90.0:
+        raise ValueError(
+            f"Longitude conversion is undefined at lat={lat}° (cos(±90°) = 0)."
+        )
     lat_deg = km / 111.32
     lon_deg = km / (111.32 * math.cos(math.radians(lat)))
     return lat_deg, lon_deg
@@ -65,17 +69,14 @@ def slugify(text: str, hyphen: str = "-") -> str:
     return s.strip(hyphen)
 
 
-def ensure_dir(path: str) -> str:
+def ensure_dir(path: str | Path) -> Path:
     """Create a directory (and any missing parents) if it does not already exist.
 
-    A thin wrapper around ``os.makedirs(path, exist_ok=True)`` that returns
-    the path so callers can chain it inline, e.g. as a default argument.
-
     Args:
-        path (str): Absolute or relative directory path to create.
+        path (str | Path): Absolute or relative directory path to create.
 
     Returns:
-        str: The same ``path`` that was passed in, unchanged.
+        Path: The resolved :class:`pathlib.Path` of the created directory.
 
     Raises:
         PermissionError: If the process lacks write permission for the target
@@ -87,8 +88,9 @@ def ensure_dir(path: str) -> str:
         >>> import tempfile, os
         >>> tmp = tempfile.mkdtemp()
         >>> result = ensure_dir(os.path.join(tmp, "a", "b"))
-        >>> os.path.isdir(result)
+        >>> result.is_dir()
         True
     """
-    os.makedirs(path, exist_ok=True)
-    return path
+    p = Path(path)
+    p.mkdir(parents=True, exist_ok=True)
+    return p
