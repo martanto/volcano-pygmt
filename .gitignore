@@ -186,3 +186,4 @@ output/
 /test_*.py
 logs/
 *.ipynb
+*.tif
