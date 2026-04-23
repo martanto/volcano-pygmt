@@ -20,6 +20,11 @@ A Python package for plotting volcano maps using [PyGMT](https://www.pygmt.org).
     <br><b>Lewotobi Laki-laki</b> · East Nusa Tenggara, Indonesia
     <br><sub>Contour interval 300 m · padding 10 km</sub>
   </td>
+  <td align="center">
+    <a href="https://raw.githubusercontent.com/martanto/volcano-pygmt/main/assets/ruang.png"><img src="https://raw.githubusercontent.com/martanto/volcano-pygmt/main/assets/ruang.png" width="240" alt="Ruang volcano map"></a>
+    <br><b>Ruang</b> · North Sulawesi, Indonesia
+    <br><sub>Contour interval 200 m · padding 5 km</sub>
+  </td>
 </tr>
 </table>
 
