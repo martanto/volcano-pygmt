@@ -524,6 +524,11 @@ def plot(
 
         file_type (str): Output file format, either ``"png"`` or ``"pdf"``.
             Defaults to ``"png"``.
+        water_color (str): Fill colour for sea/water areas when ``dem_files``
+            is provided.  Accepted values: ``"white"``, ``"blue"``,
+            ``"lightblue"``, ``"lightgray"``.  Ignored when no DEM files are
+            given (water is always ``"white"`` in that case).  Defaults to
+            ``"lightblue"``.
 
     Returns:
         list[Path]: Absolute :class:`pathlib.Path` objects for every file
