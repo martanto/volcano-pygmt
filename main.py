@@ -1,4 +1,21 @@
+import os
+import sys
+import atexit
+
 from volcano_pygmt import plot
+
+
+def _suppress_gmt_shutdown_noise() -> None:
+    # GMT's C library cleanup fires after Python tears down sys.excepthook,
+    # causing spurious "Error in sys.excepthook" lines on Windows.
+    # Redirecting fd 2 at the OS level silences them even from C code.
+    sys.stderr.flush()
+    devnull_fd = os.open(os.devnull, os.O_WRONLY)
+    os.dup2(devnull_fd, 2)
+    os.close(devnull_fd)
+
+
+atexit.register(_suppress_gmt_shutdown_noise)
 
 
 if __name__ == "__main__":
@@ -50,12 +67,16 @@ if __name__ == "__main__":
             "stations": {
                 "VG.RUA3.EHZ.00": {"lat": 2.3196, "lon": 125.3814},
             },
+            "dem_files": ["output_hh.tif"],
             "padding_km": 5,
+            "hillshade": False,
             "color_relief": False,
+            "relief_cmap": "white",
             "contour": True,
-            "contour_interval": 200.0,
-            "contour_annotation": 200.0,
+            "contour_interval": 30.0,
+            "contour_annotation": 300.0,
             "colorbar": True,
+            "water_color": "white",
         },
     ]
 
