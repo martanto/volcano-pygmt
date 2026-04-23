@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from volcano_pygmt.utils import slugify, km_to_degrees
+from volcano_pygmt.utils import slugify, get_region
 from volcano_pygmt.config import load_config
 from volcano_pygmt.logger import logger
 from volcano_pygmt.constant import COUNTRY_REGIONS
@@ -72,6 +72,7 @@ def add_inset(
             water="white",
             shorelines="1/0.3p",
             borders="1/0.3p",
+            resolution="auto",
         )
         fig.plot(
             x=volcano["lon"],
@@ -84,10 +85,33 @@ def add_inset(
     return fig
 
 
+def load_earth_relief(
+    region: list[float],
+    resolution: str = "03s",
+) -> xr.DataArray:
+    """Load SRTM earth relief data for the given region.
+
+    Args:
+        region (list[float]): Map extent as ``[lon_min, lon_max, lat_min, lat_max]``.
+        resolution (str): Grid resolution passed to
+            :func:`pygmt.datasets.load_earth_relief`.  Defaults to ``"03s"``.
+
+    Returns:
+        xr.DataArray: Relief grid clipped to ``region``.
+    """
+    logger.info("Loading earth relief data for region {}", region)
+    return pygmt.datasets.load_earth_relief(
+        resolution=resolution,  # ty:ignore[invalid-argument-type]
+        region=region,
+        use_srtm=True,
+    )
+
+
 def add_relief(
     fig: pygmt.Figure,
     region: list[float],
     projection: str,
+    grid=None,
     hillshade: bool = False,
     contour: bool = False,
     contour_interval: float = 100.0,
@@ -111,6 +135,9 @@ def add_relief(
         region (list[float]): Map extent as ``[lon_min, lon_max, lat_min, lat_max]``
             in decimal degrees.
         projection (str): PyGMT/GMT projection string, e.g. ``"M10c"``.
+        grid: Pre-loaded xarray DataArray relief grid.  When ``None``, the
+            grid is fetched from ``pygmt.datasets.load_earth_relief`` with
+            ``use_srtm=True``.  Defaults to ``None``.
         hillshade (bool): Render a hillshade (gray shaded-relief) layer.
             Defaults to ``False``.
         contour (bool): Draw elevation contour lines.  Defaults to ``False``.
@@ -136,8 +163,9 @@ def add_relief(
         >>> region = [106.5, 108.5, -8.0, -6.0]
         >>> fig = add_relief(fig, region, "M10c", hillshade=True, contour=True)
     """
-    logger.debug("Loading earth relief data for region {}", region)
-    grid = pygmt.datasets.load_earth_relief(resolution="03s", region=region)
+    logger.info("Not using DEM files")
+    if grid is None:
+        grid = load_earth_relief(region)
 
     # Compute gradient once; reused by both hillshade and color_relief if needed.
     dgrid = None
@@ -151,7 +179,7 @@ def add_relief(
 
     if color_relief:
         cpt = pygmt.makecpt(cmap=relief_cmap, series=[0, float(grid.max())])
-        fig.coast(region=region, projection=projection, land="c")
+        fig.coast(region=region, projection=projection, land="c", resolution="auto")
         fig.grdimage(grid=grid, cmap=cpt, shading=dgrid, projection=projection)
         fig.coast(Q=True)
         if colorbar:
@@ -237,7 +265,7 @@ def plot_from_dem(
     if isinstance(dem_files, str):
         dem_files = [dem_files]
 
-    logger.debug("Loading {} DEM file(s)", len(dem_files))
+    logger.info("Loading {} DEM file(s)", len(dem_files))
     arrays = [xr.open_dataarray(f, engine="rasterio") for f in dem_files]
 
     # DEMNAS and similar tiles often lack an embedded CRS; assume WGS84.
@@ -266,18 +294,34 @@ def plot_from_dem(
     if hillshade:
         dgrid = pygmt.grdgradient(grid, radiance=[315, 45], normalize="e0.6")
         fig.grdimage(
-            grid=grid, cmap="gray", shading=dgrid, projection=projection, region=region
+            grid=grid,
+            cmap="gray",
+            shading=dgrid,
+            projection=projection,
+            region=region,
         )
 
     if color_relief:
         cpt = pygmt.makecpt(
             cmap=relief_cmap, series=[float(grid.min()), float(grid.max())]
         )
+
         fig.grdimage(
-            grid=grid, cmap=cpt, shading=dgrid, projection=projection, region=region
+            grid=grid,
+            cmap=cpt,
+            shading=dgrid,
+            projection=projection,
+            region=region,
         )
+
         if colorbar:
             fig.colorbar(frame=["x+lelevation", "y+lm"])
+
+    # Paint water on top of grdimage so NaN (sea) pixels show water_color.
+    # Drawing coast after grdimage ensures the sea color is not overwritten by the DEM render.
+    fig.coast(
+        region=region, projection=projection, water=water_color, resolution="auto"
+    )
 
     if contour:
         annotation = (
@@ -293,11 +337,6 @@ def plot_from_dem(
             projection=projection,
             region=region,
         )
-
-    # Plot water color
-    fig.coast(
-        region=region, projection=projection, water=water_color, shorelines="1/2.0p"
-    )
 
     return fig
 
@@ -369,18 +408,21 @@ def create_figure(
         >>> fig = create_figure(volcano, padding_km=10.0, contour=True)
         >>> fig.savefig("example.png")
     """
+
     lon = volcano["lon"]
     lat = volcano["lat"]
     name = volcano["name"]
+    region = get_region(lat, lon, padding_km)
+    projection = "M10c"
 
     logger.info("Creating figure for volcano: {}", name)
 
-    lat_deg, lon_deg = km_to_degrees(padding_km, lat)
-
-    region = [lon - lon_deg, lon + lon_deg, lat - lat_deg, lat + lat_deg]
-    projection = "M10c"
-
     fig = pygmt.Figure()
+
+    # Pre-load earth relief grid when no local DEM files are supplied.
+    grid = None
+    if (not dem_files) and (hillshade or contour or color_relief):
+        grid = load_earth_relief(region)
 
     # 1. Load Basemap
     with pygmt.config(FONT_TITLE="10p", MAP_TITLE_OFFSET="2p"):
@@ -395,41 +437,42 @@ def create_figure(
             projection=projection,
             land=("white" if (hillshade or contour or color_relief) else "lightgray"),
             water=(None if dem_files else "white"),
-            shorelines=None if dem_files else "1/2.0p",
+            shorelines="1/2.0p",
             borders="1/0.5p",
             frame="a",
+            resolution="auto",
         )
 
     # 3. Add relief (hillshade, contour, or color)
-    if hillshade or contour or color_relief:
-        if dem_files:
-            plot_from_dem(
-                fig,
-                dem_files,
-                projection,
-                region=region,
-                hillshade=hillshade,
-                contour=contour,
-                contour_interval=contour_interval,
-                contour_annotation=contour_annotation,
-                color_relief=color_relief,
-                colorbar=colorbar,
-                relief_cmap=relief_cmap,
-                water_color=water_color,
-            )
-        else:
-            add_relief(
-                fig,
-                region,
-                projection,
-                hillshade=hillshade,
-                contour=contour,
-                contour_interval=contour_interval,
-                contour_annotation=contour_annotation,
-                color_relief=color_relief,
-                colorbar=colorbar,
-                relief_cmap=relief_cmap,
-            )
+    if dem_files is not None:
+        fig = plot_from_dem(
+            fig,
+            dem_files,
+            projection,
+            region=region,
+            hillshade=hillshade,
+            contour=contour,
+            contour_interval=contour_interval,
+            contour_annotation=contour_annotation,
+            color_relief=color_relief,
+            colorbar=colorbar,
+            relief_cmap=relief_cmap,
+            water_color=water_color,
+        )
+    elif hillshade or contour or color_relief:
+        fig = add_relief(
+            fig,
+            region,
+            projection,
+            grid=grid,
+            hillshade=hillshade,
+            contour=contour,
+            contour_interval=contour_interval,
+            contour_annotation=contour_annotation,
+            color_relief=color_relief,
+            colorbar=colorbar,
+            relief_cmap=relief_cmap,
+        )
 
     # 4. Plot volcano location
     fig.plot(
@@ -474,7 +517,7 @@ def create_figure(
     with pygmt.config(FONT_ANNOT_PRIMARY="6p"):
         fig.legend(position="JBR+jBR+o0.2c/0.6c", box="+gwhite+p0.5p")
 
-    # 7. Add scale bar
+    # 7. Add scale bar and compass rose.
     scale_km = max(1, round(padding_km * 0.4))
     with pygmt.config(FONT_ANNOT_PRIMARY="6p"):
         fig.basemap(
@@ -490,8 +533,11 @@ def create_figure(
     return fig
 
 
+@logger.catch
 def plot(
-    maps: list, file_type: str = "png", water_color: str = "lightblue"
+    maps: list,
+    file_type: str = "png",
+    water_color: str = "lightblue",
 ) -> list[Path]:
     """Render a batch of volcano maps and save each as a PNG file.
 

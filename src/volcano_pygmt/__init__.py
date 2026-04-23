@@ -8,6 +8,7 @@ from volcano_pygmt.plot import (
     create_figure,
     plot_from_dem,
 )
+from volcano_pygmt.utils import get_region
 
 
 __version__ = version("volcano-pygmt")
@@ -28,4 +29,5 @@ __all__ = [
     "create_figure",
     "plot_from_dem",
     "plot",
+    "get_region",
 ]

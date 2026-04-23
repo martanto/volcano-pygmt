@@ -39,6 +39,26 @@ def km_to_degrees(km: float, lat: float) -> tuple[float, float]:
     return lat_deg, lon_deg
 
 
+def get_region(lat: float, lon: float, padding_km: float) -> list[float]:
+    """Compute a bounding-box region centred on a point with a given padding.
+
+    Args:
+        lon (float): Centre longitude in decimal degrees.
+        lat (float): Centre latitude in decimal degrees.
+        padding_km (float): Half-extent of the region in kilometres.
+
+    Returns:
+        list[float]: ``[lon_min, lon_max, lat_min, lat_max]`` in decimal degrees.
+
+    Examples:
+        >>> region = get_region(107.65, -6.9, 10.0)
+        >>> len(region)
+        4
+    """
+    lat_deg, lon_deg = km_to_degrees(padding_km, lat)
+    return [lon - lon_deg, lon + lon_deg, lat - lat_deg, lat + lat_deg]
+
+
 def slugify(text: str, hyphen: str = "-") -> str:
     """Convert arbitrary text into a safe filename slug.
 
