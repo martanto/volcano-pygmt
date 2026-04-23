@@ -29,7 +29,7 @@ def test_logger_importable():
 def test_package_importable():
     import volcano_pygmt
     assert hasattr(volcano_pygmt, "__version__")
-    assert hasattr(volcano_pygmt, "simple_plot")
+    assert hasattr(volcano_pygmt, "plot")
     assert hasattr(volcano_pygmt, "create_figure")
 
 
