@@ -187,6 +187,7 @@ def plot_from_dem(
     color_relief: bool = False,
     colorbar: bool = False,
     relief_cmap: str = "gmt/haxby",
+    water_color: str = "lightblue",
 ) -> pygmt.Figure:
     """Load one or more local DEM files and render hillshade, color relief, and/or contours.
 
@@ -217,6 +218,10 @@ def plot_from_dem(
             to ``False``.
         relief_cmap (str): GMT colormap name for the colour-relief image.
             Defaults to ``"gmt/haxby"``.
+        water_color (str): Fill colour for sea/water areas (pixels with
+            elevation ≤ 0 are masked to transparent).  Accepted values:
+            ``"white"``, ``"blue"``, ``"lightblue"``, ``"lightgray"``.
+            Defaults to ``"lightblue"``.
 
     Returns:
         pygmt.Figure: The same ``fig`` object with the requested relief layers
@@ -255,11 +260,11 @@ def plot_from_dem(
             float(grid.y.max()),
         ]
 
-    dgrid = None
-    if hillshade or color_relief:
-        dgrid = pygmt.grdgradient(grid, radiance=[315, 45], normalize="e0.6")
+    grid = grid.where(grid > 0)
 
+    dgrid = None
     if hillshade:
+        dgrid = pygmt.grdgradient(grid, radiance=[315, 45], normalize="e0.6")
         fig.grdimage(
             grid=grid, cmap="gray", shading=dgrid, projection=projection, region=region
         )
@@ -289,6 +294,11 @@ def plot_from_dem(
             region=region,
         )
 
+    # Plot water color
+    fig.coast(
+        region=region, projection=projection, water=water_color, shorelines="1/2.0p"
+    )
+
     return fig
 
 
@@ -306,6 +316,7 @@ def create_figure(
     colorbar: bool = False,
     relief_cmap: str = "gmt/haxby",
     show_title: bool = True,
+    water_color: str = "lightblue",
 ) -> pygmt.Figure:
     """Create a PyGMT scientific map for a single volcano and its seismic stations.
 
@@ -343,6 +354,11 @@ def create_figure(
             ``"gmt/haxby"``.
         show_title (bool): Display the volcano name as the map title.
             Defaults to ``True``.
+        water_color (str): Fill colour for sea/water areas when ``dem_files``
+            is provided.  Accepted values: ``"white"``, ``"blue"``,
+            ``"lightblue"``, ``"lightgray"``.  Ignored when no DEM files are
+            given (water is always ``"white"`` in that case).  Defaults to
+            ``"lightblue"``.
 
     Returns:
         pygmt.Figure: A fully rendered PyGMT figure ready to save or display.
@@ -378,7 +394,7 @@ def create_figure(
             region=region,
             projection=projection,
             land=("white" if (hillshade or contour or color_relief) else "lightgray"),
-            water="white",
+            water=(None if dem_files else "white"),
             shorelines=None if dem_files else "1/2.0p",
             borders="1/0.5p",
             frame="a",
@@ -399,6 +415,7 @@ def create_figure(
                 color_relief=color_relief,
                 colorbar=colorbar,
                 relief_cmap=relief_cmap,
+                water_color=water_color,
             )
         else:
             add_relief(
@@ -473,7 +490,9 @@ def create_figure(
     return fig
 
 
-def plot(maps: list, file_type: str = "png") -> list[Path]:
+def plot(
+    maps: list, file_type: str = "png", water_color: str = "lightblue"
+) -> list[Path]:
     """Render a batch of volcano maps and save each as a PNG file.
 
     Iterates over a list of map specification dicts, calls :func:`create_figure`
@@ -501,6 +520,7 @@ def plot(maps: list, file_type: str = "png") -> list[Path]:
             * ``"colorbar"`` (bool) — defaults to ``False``.
             * ``"relief_cmap"`` (str) — defaults to ``"gmt/haxby"``.
             * ``"show_title"`` (bool) — defaults to ``False``.
+            * ``"water_color"`` (str) — defaults to ``"lightblue"``.
 
         file_type (str): Output file format, either ``"png"`` or ``"pdf"``.
             Defaults to ``"png"``.
@@ -547,6 +567,7 @@ def plot(maps: list, file_type: str = "png") -> list[Path]:
             colorbar=_map.get("colorbar", False),
             relief_cmap=_map.get("relief_cmap", "gmt/haxby"),
             show_title=_map.get("show_title", False),
+            water_color=_map.get("water_color", water_color),
         )
 
         fig.savefig(filepath)
