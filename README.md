@@ -1,6 +1,6 @@
 # volcano-pygmt
 
-![Version](https://img.shields.io/badge/version-0.2.0-blue)
+![Version](https://img.shields.io/badge/version-0.3.0-blue)
 [![PyPI](https://img.shields.io/pypi/v/volcano-pygmt)](https://pypi.org/project/volcano-pygmt/)
 ![Python](https://img.shields.io/badge/python-3.12%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
