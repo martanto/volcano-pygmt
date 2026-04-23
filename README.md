@@ -1,6 +1,6 @@
 # volcano-pygmt
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![Version](https://img.shields.io/badge/version-0.2.0-blue)
 [![PyPI](https://img.shields.io/pypi/v/volcano-pygmt)](https://pypi.org/project/volcano-pygmt/)
 ![Python](https://img.shields.io/badge/python-3.12%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -117,12 +117,12 @@ cd volcano-pygmt
 uv sync
 ```
 
-This installs all runtime dependencies (`pygmt`, `loguru`, `dotenv`) and dev tools (`ruff`, `ty`, `pytest`, etc.).
+This installs all runtime dependencies (`pygmt`, `rioxarray`, `loguru`, `dotenv`) and dev tools (`ruff`, `ty`, `pytest`, etc.).
 
 ## Quick Start
 
 ```python
-from volcano_pygmt import simple_plot
+from volcano_pygmt import plot
 
 maps = [
     {
@@ -138,30 +138,37 @@ maps = [
     },
 ]
 
-files = simple_plot(maps)
+files = plot(maps)
 print(files)  # [PosixPath('.../output/semeru.png')]
 ```
 
 Output PNG files are saved to `./output/<volcano-name-slug>.png`.
 
-See `main.py` for a more complete example with multiple volcanoes.
+See `main.py` for a more complete example with multiple volcanoes and local DEM files.
 
 ## Examples
 
 ### Multiple volcanoes in a batch
 
-The following example (from `main.py`) plots three Indonesian volcanoes — Semeru, Lewotobi Laki-laki, and Ruang — each with one seismic station and contour lines:
+The following example (from `main.py`) plots three Indonesian volcanoes — Semeru, Lewotobi Laki-laki, and Ruang — each with one seismic station and contour lines. Semeru and Lewotobi use local DEM files; Ruang falls back to SRTM data:
 
 ```python
-from volcano_pygmt import simple_plot
+from volcano_pygmt import plot
 
 maps = [
     {
-        "padding_km": 20,
         "volcano": {"lon": 112.922, "lat": -8.108, "elev": 3672, "name": "Semeru"},
         "stations": {
             "VG.LEKR.EHZ.00": {"lat": -8.137244444, "lon": 112.9858444},
         },
+        "dem_files": [
+            "DEMNAS_1608-12_v1.0.tif",
+            "DEMNAS_1608-21_v1.0.tif",
+            "DEMNAS_1607-42_v1.0.tif",
+            "DEMNAS_1607-44_v1.0.tif",
+            "DEMNAS_1607-53_v1.0.tif",
+        ],
+        "padding_km": 20,
         "color_relief": False,
         "contour": True,
         "contour_interval": 300.0,
@@ -169,7 +176,6 @@ maps = [
         "colorbar": True,
     },
     {
-        "padding_km": 10,
         "volcano": {
             "lon": 122.775,
             "lat": -8.542,
@@ -179,18 +185,25 @@ maps = [
         "stations": {
             "VG.OJN.EHZ.00": {"lat": -8.502944444, "lon": 122.7737222},
         },
+        "dem_files": [
+            "DEMNAS_2207-33_v1.0.tif",
+            "DEMNAS_2207-34_v1.0.tif",
+            "DEMNAS_2207-61_v1.0.tif",
+            "DEMNAS_2207-62_v1.0.tif",
+        ],
+        "padding_km": 10,
         "color_relief": False,
         "contour": True,
-        "contour_interval": 300.0,
+        "contour_interval": 100.0,
         "contour_annotation": 300.0,
         "colorbar": True,
     },
     {
-        "padding_km": 5,
         "volcano": {"lon": 125.3667, "lat": 2.3031, "elev": 703, "name": "Ruang"},
         "stations": {
             "VG.RUA3.EHZ.00": {"lat": 2.3196, "lon": 125.3814},
         },
+        "padding_km": 5,
         "color_relief": False,
         "contour": True,
         "contour_interval": 200.0,
@@ -199,7 +212,7 @@ maps = [
     },
 ]
 
-simple_plot(maps)
+plot(maps, "png")
 ```
 
 Run it with:
@@ -231,17 +244,19 @@ fig.savefig("tangkuban-parahu.png")
 
 ## API Reference
 
-### `simple_plot(maps)`
+### `plot(maps, file_type, water_color)`
 
-Batch-render a list of volcano map specs and save each as a PNG to `./output/<slug>.png`.
+Batch-render a list of volcano map specs and save each as a file to `./output/<slug>.<file_type>`.
 
 **Parameters:**
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `maps` | `list[dict]` | List of map specification dicts (see keys below) |
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `maps` | `list[dict]` | required | List of map specification dicts (see keys below) |
+| `file_type` | `str` | `"png"` | Output file format: `"png"` or `"pdf"` |
+| `water_color` | `str` | `"lightblue"` | Default water fill colour for all maps using DEM files (overridden per-map by `"water_color"` key) |
 
-**Returns:** `list[pathlib.Path]` — absolute paths to the saved PNG files, in input order.
+**Returns:** `list[pathlib.Path]` — absolute paths to the saved files, in input order.
 
 **Map spec keys:**
 
@@ -250,15 +265,17 @@ Batch-render a list of volcano map specs and save each as a PNG to `./output/<sl
 | `volcano` | `dict` | required | Volcano info — must include `"lon"` (float), `"lat"` (float), `"name"` (str) |
 | `padding_km` | `float` | required | Half-extent of the map around the volcano centre in kilometres |
 | `stations` | `dict \| None` | `None` | Station codes mapped to `{"lon": float, "lat": float}`; omit or set `None` to skip |
+| `dem_files` | `list[str] \| None` | `None` | Local GeoTIFF DEM file paths; falls back to SRTM download when `None` |
 | `country` | `str` | `"Indonesia"` | Country name for the locator inset (must be in `COUNTRY_REGIONS`) |
 | `hillshade` | `bool` | `False` | Render a grayscale shaded-relief layer |
 | `contour` | `bool` | `False` | Draw elevation contour lines |
 | `contour_interval` | `float` | `100.0` | Spacing between contour lines in metres |
 | `contour_annotation` | `float \| None` | `None` | Contour label interval in metres; defaults to `5 × contour_interval` when `None` |
-| `color_relief` | `bool` | `False` | Render a colour-filled elevation image (requires `contour=True`) |
+| `color_relief` | `bool` | `False` | Render a colour-filled elevation image |
 | `colorbar` | `bool` | `False` | Add an elevation colorbar (requires `color_relief=True`) |
 | `relief_cmap` | `str` | `"gmt/haxby"` | GMT colormap for colour relief — any valid GMT CPT name (e.g. `"geo"`, `"topo"`, `"dem1"`, `"gray"`) |
 | `show_title` | `bool` | `False` | Display the volcano name as the map title |
+| `water_color` | `str` | `"lightblue"` | Fill colour for water areas when `dem_files` is set — `"white"`, `"blue"`, `"lightblue"`, or `"lightgray"` |
 
 ---
 
@@ -274,14 +291,16 @@ Create and return a fully composed `pygmt.Figure` for a single volcano. Includes
 | `stations` | `dict \| None` | `None` | Station codes mapped to `{"lon": float, "lat": float}`; omit or set `None` to skip |
 | `padding_km` | `float` | `5.0` | Half-extent of the map around the volcano centre in kilometres |
 | `country` | `str` | `"Indonesia"` | Country name for the locator inset |
+| `dem_files` | `list[str] \| None` | `None` | Local GeoTIFF DEM file paths; falls back to SRTM download when `None` |
 | `hillshade` | `bool` | `False` | Render a grayscale shaded-relief layer |
 | `contour` | `bool` | `False` | Draw elevation contour lines |
 | `contour_interval` | `float` | `100.0` | Spacing between contour lines in metres |
 | `contour_annotation` | `float \| None` | `None` | Contour label interval in metres; defaults to `5 × contour_interval` when `None` |
-| `color_relief` | `bool` | `False` | Render a colour-filled elevation image (requires `contour=True`) |
+| `color_relief` | `bool` | `False` | Render a colour-filled elevation image |
 | `colorbar` | `bool` | `False` | Add an elevation colorbar (requires `color_relief=True`) |
 | `relief_cmap` | `str` | `"gmt/haxby"` | GMT colormap for colour relief |
 | `show_title` | `bool` | `True` | Display the volcano name as the map title |
+| `water_color` | `str` | `"lightblue"` | Fill colour for water areas when `dem_files` is set — `"white"`, `"blue"`, `"lightblue"`, or `"lightgray"` |
 
 **Returns:** `pygmt.Figure` — fully rendered figure ready to save or display.
 
@@ -302,9 +321,34 @@ Download SRTM 3-arc-second earth relief for `region` and composite one or more t
 | `contour` | `bool` | `False` | Draw elevation contour lines |
 | `contour_interval` | `float` | `100.0` | Spacing between contour lines in metres |
 | `contour_annotation` | `float \| None` | `None` | Contour label interval in metres; defaults to `5 × contour_interval` when `None` |
-| `color_relief` | `bool` | `False` | Render a colour-filled elevation image using `relief_cmap` (only applied when `contour=True`) |
+| `color_relief` | `bool` | `False` | Render a colour-filled elevation image using `relief_cmap` |
 | `colorbar` | `bool` | `False` | Add an elevation colorbar labelled in metres (requires `color_relief=True`) |
 | `relief_cmap` | `str` | `"gmt/haxby"` | GMT colormap name for the colour-relief image |
+
+**Returns:** `pygmt.Figure` — the same `fig` with the requested layers added in-place.
+
+---
+
+### `plot_from_dem(fig, dem_files, projection, ...)`
+
+Load one or more local GeoTIFF DEM files and composite hillshade, color relief, and/or contours onto `fig`.
+
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `fig` | `pygmt.Figure` | required | The PyGMT figure to draw on |
+| `dem_files` | `str \| list[str]` | required | Path or list of paths to GeoTIFF DEM files; multiple files are merged before plotting |
+| `projection` | `str` | required | PyGMT/GMT projection string, e.g. `"M10c"` |
+| `region` | `list[float] \| None` | `None` | Map extent as `[lon_min, lon_max, lat_min, lat_max]`; uses full DEM extent when `None` |
+| `hillshade` | `bool` | `False` | Render a grayscale shaded-relief layer |
+| `contour` | `bool` | `False` | Draw elevation contour lines |
+| `contour_interval` | `float` | `100.0` | Spacing between contour lines in metres |
+| `contour_annotation` | `float \| None` | `None` | Contour label interval in metres; defaults to `5 × contour_interval` when `None` |
+| `color_relief` | `bool` | `False` | Render a colour-filled elevation image |
+| `colorbar` | `bool` | `False` | Add a colorbar showing the elevation scale |
+| `relief_cmap` | `str` | `"gmt/haxby"` | GMT colormap name for the colour-relief image |
+| `water_color` | `str` | `"lightblue"` | Fill colour for sea/water areas — `"white"`, `"blue"`, `"lightblue"`, or `"lightgray"` |
 
 **Returns:** `pygmt.Figure` — the same `fig` with the requested layers added in-place.
 
