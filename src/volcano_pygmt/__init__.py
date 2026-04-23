@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 from importlib.metadata import version
 
-from volcano_pygmt.plot import add_inset, add_relief, simple_plot, create_figure
+from volcano_pygmt.plot import (
+    plot,
+    add_inset,
+    add_relief,
+    create_figure,
+    plot_from_dem,
+)
 
 
 __version__ = version("volcano-pygmt")
@@ -20,5 +26,6 @@ __all__ = [
     "add_inset",
     "add_relief",
     "create_figure",
-    "simple_plot",
+    "plot_from_dem",
+    "plot",
 ]
