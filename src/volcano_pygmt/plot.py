@@ -522,11 +522,11 @@ def create_figure(
 
     # 7. Add scale bar and compass rose.
     scale_km = max(1, round(padding_km * 0.4))
-    with pygmt.config(FONT_ANNOT_PRIMARY="6p"):
+    with pygmt.config(FONT_ANNOT_PRIMARY="6p", FONT_LABEL="6p"):
         fig.basemap(
             region=region,
             projection=projection,
-            map_scale=f"jBR+o0.2c/0.3c+w{scale_km}+f",
+            map_scale=f"jBR+o0.2c/0.3c+w{scale_km}+f+lkm+al",
             rose="jTR+o0.3c+w1.2c",
         )
 
