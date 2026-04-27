@@ -541,6 +541,7 @@ def plot(
     maps: list,
     file_type: str = "png",
     water_color: str = "lightblue",
+    dpi: int = 300,
 ) -> list[Path]:
     """Render a batch of volcano maps and save each as a PNG file.
 
@@ -578,6 +579,7 @@ def plot(
             ``"lightblue"``, ``"lightgray"``.  Ignored when no DEM files are
             given (water is always ``"white"`` in that case).  Defaults to
             ``"lightblue"``.
+        dpi (int): DPI resolution while saving an image. Defaults to ``300``.
 
     Returns:
         list[Path]: Absolute :class:`pathlib.Path` objects for every file
@@ -625,7 +627,7 @@ def plot(
             shorelines=_map.get("shorelines", True),
         )
 
-        fig.savefig(filepath)
+        fig.savefig(filepath, dpi=dpi)
         logger.info("Saved figure to {}", filepath)
 
         files.append(filepath)
