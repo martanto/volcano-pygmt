@@ -356,6 +356,7 @@ def create_figure(
     relief_cmap: str = "gmt/haxby",
     show_title: bool = True,
     water_color: str = "lightblue",
+    shorelines: bool = True,
 ) -> pygmt.Figure:
     """Create a PyGMT scientific map for a single volcano and its seismic stations.
 
@@ -398,6 +399,8 @@ def create_figure(
             ``"lightblue"``, ``"lightgray"``.  Ignored when no DEM files are
             given (water is always ``"white"`` in that case).  Defaults to
             ``"lightblue"``.
+        shorelines (bool): Draw coastlines and country borders.  Defaults to
+            ``True``.
 
     Returns:
         pygmt.Figure: A fully rendered PyGMT figure ready to save or display.
@@ -437,8 +440,8 @@ def create_figure(
             projection=projection,
             land=("white" if (hillshade or contour or color_relief) else "lightgray"),
             water=(None if dem_files else "white"),
-            shorelines="1/2.0p",
-            borders="1/0.5p",
+            shorelines="1/2.0p" if shorelines else None,
+            borders="1/0.5p" if shorelines else None,
             frame="a",
             resolution="auto",
         )
@@ -619,6 +622,7 @@ def plot(
             relief_cmap=_map.get("relief_cmap", "gmt/haxby"),
             show_title=_map.get("show_title", False),
             water_color=_map.get("water_color", water_color),
+            shorelines=_map.get("shorelines", True),
         )
 
         fig.savefig(filepath)
